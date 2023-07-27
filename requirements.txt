@@ -1,0 +1,14 @@
+The required Python packages for this program are:
+
+- datetime
+- numpy
+- pandas
+- pandas_datareader
+- gym
+- keras (including keras.models, keras.layers, and keras.optimizers)
+
+You can install these packages using the following command:
+
+```
+pip install datetime numpy pandas pandas_datareader gym keras
+```
