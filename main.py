@@ -21,7 +21,8 @@ class StockTradingEnvironment(gym.Env):
         self.start_date = start_date
         self.end_date = end_date
 
-        self.df = self._get_stock_data(self.symbol, self.start_date, self.end_date)
+        self.df = self._get_stock_data(
+            self.symbol, self.start_date, self.end_date)
         self.max_steps = len(self.df) - 1
 
         self.action_space = spaces.Discrete(3)  # Hold, Buy, Sell
@@ -48,16 +49,23 @@ class StockTradingEnvironment(gym.Env):
         return [seed]
 
     def _get_observation(self):
-        prev_holdings_value = self.current_holdings * self.df.loc[self.current_step - 1, 'Close']
-        current_holdings_value = self.current_holdings * self.df.loc[self.current_step, 'Close']
+        prev_holdings_value = self.current_holdings * \
+            self.df.loc[self.current_step - 1, 'Close']
+        current_holdings_value = self.current_holdings * \
+            self.df.loc[self.current_step, 'Close']
         net_worth = self.current_cash + current_holdings_value
         portfolio_value = net_worth / self.initial_cash
-        
+
         observation = np.array([
-            self.df.loc[self.current_step, 'Open'] / self.df.loc[self.current_step, 'Close'],  # Open/Close ratio
-            self.df.loc[self.current_step, 'High'] / self.df.loc[self.current_step, 'Close'],  # High/Close ratio
-            self.df.loc[self.current_step, 'Low'] / self.df.loc[self.current_step, 'Close'],  # Low/Close ratio
-            self.df.loc[self.current_step, 'Close'] / self.df.loc[self.current_step - 1, 'Close'],  # Close/prev_close ratio
+            self.df.loc[self.current_step, 'Open'] /
+            self.df.loc[self.current_step, 'Close'],  # Open/Close ratio
+            self.df.loc[self.current_step, 'High'] / \
+            self.df.loc[self.current_step, 'Close'],  # High/Close ratio
+            self.df.loc[self.current_step, 'Low'] / \
+            self.df.loc[self.current_step, 'Close'],  # Low/Close ratio
+            # Close/prev_close ratio
+            self.df.loc[self.current_step, 'Close'] / \
+            self.df.loc[self.current_step - 1, 'Close'],
             prev_holdings_value / self.initial_cash,  # previous holdings value
             portfolio_value  # current portfolio value
         ])
@@ -72,17 +80,21 @@ class StockTradingEnvironment(gym.Env):
         elif action == 1 and self.current_cash > current_price:  # Buy
             shares_to_buy = int(self.current_cash / current_price)
             transaction_cost = shares_to_buy * current_price * self.transaction_cost_pct
-            self.current_cash -= (shares_to_buy * current_price) + transaction_cost
+            self.current_cash -= (shares_to_buy *
+                                  current_price) + transaction_cost
             self.current_holdings += shares_to_buy
         elif action == 2 and self.current_holdings > 0:  # Sell
             shares_to_sell = self.current_holdings
             transaction_cost = shares_to_sell * current_price * self.transaction_cost_pct
-            self.current_cash += (shares_to_sell * current_price) - transaction_cost
+            self.current_cash += (shares_to_sell *
+                                  current_price) - transaction_cost
             self.current_holdings -= shares_to_sell
 
     def _get_reward(self):
-        prev_portfolio_value = (self.current_cash + (self.current_holdings * self.df.loc[self.current_step - 1, 'Close'])) / self.initial_cash
-        current_portfolio_value = (self.current_cash + (self.current_holdings * self.df.loc[self.current_step, 'Close'])) / self.initial_cash
+        prev_portfolio_value = (self.current_cash + (self.current_holdings *
+                                self.df.loc[self.current_step - 1, 'Close'])) / self.initial_cash
+        current_portfolio_value = (self.current_cash + (self.current_holdings *
+                                   self.df.loc[self.current_step, 'Close'])) / self.initial_cash
         reward = current_portfolio_value - prev_portfolio_value
         return reward
 
@@ -95,7 +107,7 @@ class StockTradingEnvironment(gym.Env):
             self.current_step = 0
 
         observation = self._get_observation()
-        
+
         reward = self._get_reward()
 
         done = False
@@ -138,7 +150,7 @@ model = build_model(input_shape, output_shape)
 for episode in range(episodes):
     state = env.reset()
     state = np.reshape(state, [1, input_shape[0]])
-    
+
     total_reward = 0
     done = False
 
@@ -162,7 +174,8 @@ for episode in range(episodes):
         next_states = np.array([transition[3] for transition in batch])
         dones = np.array([transition[4] for transition in batch])
 
-        targets = rewards + gamma * np.max(model.predict(next_states), axis=1) * (1 - dones)
+        targets = rewards + gamma * \
+            np.max(model.predict(next_states), axis=1) * (1 - dones)
         target_vecs = model.predict(states)
         target_vecs[range(batch_size), actions] = targets
 
